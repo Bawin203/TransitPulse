@@ -216,7 +216,7 @@ LANDMARKS = {
     "IKEA Nagasandra": {"hub": "NGS", "feeder_mode": "Walk (Direct Footbridge)", "mins": 3, "fare_min": 0, "fare_max": 0, "aliases": ["ikea", "ikae", "ikia", "ikea nagasandra", "ಐಕಿಯಾ", "आइकिया"]},
     "Manyata Tech Park": {"hub": "HBL", "feeder_mode": "BMTC Feeder / Auto", "mins": 8, "fare_min": 15, "fare_max": 35, "aliases": ["manyata", "manyata tech park", "manyatha", "ಮಾನ್ಯತಾ", "मान्यता"]},
     "Orion Mall / WTC": {"hub": "MLM", "feeder_mode": "Walk (Direct Footbridge)", "mins": 5, "fare_min": 0, "fare_max": 0, "aliases": ["orion", "orion mall", "world trade center", "wtc", "ಓರಿಯನ್"]},
-    "Phoenix Marketcity / VR": {"hub": "MDP", "feeder_mode": "Walk / Feeder Bus", "mins": 6, "fare_min": 0, "fare_max": 15, "aliases": ["phoenix", "phoenix marketcity", "vr bengaluru", "ಫೀನಿಕ್ಸ್"]},
+    "Phoenix Marketcity / VR": {"hub": "MDP", "feeder_mode": "Walk (Direct Footbridge)", "mins": 4, "fare_min": 0, "fare_max": 0, "aliases": ["phoenix", "phoenix marketcity", "vr bengaluru", "ಫೀನಿಕ್ಸ್"]},
     "Wonderla Amusement Park": {"hub": "BDD", "feeder_mode": "KSRTC Feeder / Auto", "mins": 10, "fare_min": 20, "fare_max": 50, "aliases": ["wonderla", "wonder la", "ವಂಡರ್ಲಾ", "वंडरला"]},
     "Nandi Hills Top": {"hub": "NDH", "feeder_mode": "KSRTC Hill Shuttle / Taxi", "mins": 20, "fare_min": 35, "fare_max": 100, "aliases": ["nandi hills", "nandi betta", "ನಂದಿ ಬೆಟ್ಟ", "नंदी हिल्स"]},
     "IISc Bengaluru": {"hub": "YPR", "feeder_mode": "BMTC Feeder / Auto", "mins": 7, "fare_min": 15, "fare_max": 30, "aliases": ["iisc", "indian institute of science", "tata institute"]},
