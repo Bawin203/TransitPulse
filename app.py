@@ -184,30 +184,54 @@ ONBOARDING_T = {
 
 AUTHORITY_MANUAL = {
     "English": {
-        "title": "📘 Authority Control Room Standard Operating Manual (SOP)",
+        "title": "📘 Authority Control Room Manual & Glossary",
         "steps": [
-            ("1. Verify Citizen Breakdown Reports", "When commuters report a train fault or road blockage, it appears in **Incident Verification** on Tab 1. Routes do **not** change until you click **✅ Confirm & Push**—preventing false alarms."),
-            ("2. Broadcast Proactive Alerts & Anonymous Push", "Open **Publish Direct Proactive Alert**, select the station and reason, and click **Publish**. Subscribed commuters receive an instant lock-screen push alert with zero login."),
+            ("1. Verify Citizen Breakdown Reports", "When commuters report a train fault or road blockage, it appears in **Breakdown Reports & Live Alerts** on Tab 1. Routes do **not** change until you click **✅ Confirm & Push**—preventing false alarms."),
+            ("2. Broadcast Proactive Alerts & Anonymous Push", "Open **Announce Station Closure & Send Alert**, select the station and reason, and click **Publish**. Subscribed commuters receive an instant lock-screen push alert with zero login."),
             ("3. Reopen Resolved Hubs", "Once track or road clearance is confirmed, click **✅ Reopen** next to the active incident banner to restore normal routing."),
-            ("4. Optimize Metro Headway & Reserve Bus Fleet", "In Tab 2 (**Fleet, Manual & Audit**), lower the **BMRCL Metro Headway** or toggle **ORR Bus Priority Lanes**, then click **Execute Fleet Dispatch Orders** and export the CSV Shift Report.")
+            ("4. Optimize Train Gap & Spare Bus Fleet", "In Tab 2 (**Fleet, Manual & Audit**), lower the **Train Gap / Wait Time** or toggle **Dedicated Bus-Only Lanes (ORR)**, then click **Execute Fleet Dispatch Orders** and export the CSV Shift Report.")
+        ],
+        "glossary": [
+            ("System Health Score (Network Resilience)", "A 0–100 score showing how smoothly Bengaluru's transit is running. 80–100 means smooth flow; below 60 means heavy crowding or station closures."),
+            ("Crowded Routes (Overloaded Links)", "The number of bus or metro segments where passenger demand is higher than available vehicle capacity."),
+            ("Bus Frequency & Extra Buses", "Shows how often buses arrive (headway in minutes). When a station closes, BMTC automatically increases bus frequency (e.g., 1.8x or 3.0x) to clear stranded passengers."),
+            ("Train Gap / Wait Time (Headway)", "The time gap in minutes between two consecutive Metro trains. Lowering this number puts more trains on the track."),
+            ("Spare Buses Available in Depots", "The maximum number of reserve BMTC buses available across city depots to deploy onto broken or crowded corridors."),
+            ("Officer Action Log & Report (Audit Trail)", "A timestamped security record of every closure, reopening, and bus dispatch made by the logged-in officer.")
         ]
     },
     "ಕನ್ನಡ (Kannada)": {
-        "title": "📘 ಪ್ರಾಧಿಕಾರ ನಿಯಂತ್ರಣ ಕೊಠಡಿ ಕಾರ್ಯಾಚರಣೆ ಕೈಪಿಡಿ (SOP)",
+        "title": "📘 ಪ್ರಾಧಿಕಾರ ನಿಯಂತ್ರಣ ಕೊಠಡಿ ಕೈಪಿಡಿ ಮತ್ತು ಪದಕೋಶ (Manual & Glossary)",
         "steps": [
             ("1. ಪ್ರಯಾಣಿಕರ ದೂರುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ", "ಪ್ರಯಾಣಿಕರು ಕಳುಹಿಸುವ ತೊಂದರೆ ವರದಿಗಳು ಟ್ಯಾಬ್ 1 ರಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ. ನೀವು **✅ Confirm & Push** ಒತ್ತುವವರೆಗೆ ಮಾರ್ಗಗಳು ಬದಲಾಗುವುದಿಲ್ಲ."),
             ("2. ನೇರ ಎಚ್ಚರಿಕೆ ಮತ್ತು ಅನಾಮಧೇಯ ಪುಶ್", "ನಿಯಂತ್ರಣ ಕೊಠಡಿಯಿಂದಲೇ ನೇರವಾಗಿ ನಿಲ್ದಾಣದ ಸ್ಥಗಿತವನ್ನು ಪ್ರಕಟಿಸಬಹುದು. ಇದರಿಂದ ಪ್ರಯಾಣಿಕರಿಗೆ ತಕ್ಷಣವೇ ಅಧಿಸೂಚನೆ ತಲುಪುತ್ತದೆ."),
             ("3. ನಿಲ್ದಾಣವನ್ನು ಪುನಃ ತೆರೆಯಿರಿ", "ಸಮಸ್ಯೆ ಬಗೆಹರಿದ ನಂತರ **✅ Reopen** ಬಟನ್ ಒತ್ತಿ ಸಾಮಾನ್ಯ ಸಂಚಾರವನ್ನು ಪುನರಾರಂಭಿಸಿ."),
-            ("4. ಮೆಟ್ರೋ ಹೆಡ್‌ವೇ ಮತ್ತು ಬಸ್ ನಿಯೋಜನೆ", "ಟ್ಯಾಬ್ 2 ರಲ್ಲಿ ಮೆಟ್ರೋ ಸಮಯದ ಅಂತರವನ್ನು ಕಡಿಮೆ ಮಾಡಿ, ಹೆಚ್ಚುವರಿ ಶಟಲ್ ಬಸ್‌ಗಳನ್ನು ನಿಯೋಜಿಸಿ ಮತ್ತು ಶಿಫ್ಟ್ ವರದಿಯನ್ನು (CSV) ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.")
+            ("4. ಮೆಟ್ರೋ ಸಮಯ ಮತ್ತು ಬಸ್ ನಿಯೋಜನೆ", "ಟ್ಯಾಬ್ 2 ರಲ್ಲಿ ರೈಲುಗಳ ನಡುವಿನ ಅಂತರವನ್ನು ಕಡಿಮೆ ಮಾಡಿ, ಹೆಚ್ಚುವರಿ ಶಟಲ್ ಬಸ್‌ಗಳನ್ನು ನಿಯೋಜಿಸಿ ಮತ್ತು ಶಿಫ್ಟ್ ವರದಿಯನ್ನು (CSV) ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.")
+        ],
+        "glossary": [
+            ("System Health Score (ವ್ಯವಸ್ಥೆಯ ಆರೋಗ್ಯ ಸ್ಕೋರ್)", "0–100 ರ ನಡುವಿನ ಸ್ಕೋರ್. 80 ಕ್ಕಿಂತ ಹೆಚ್ಚಿದ್ದರೆ ಸಂಚಾರ ಸುಗಮವಾಗಿದೆ; 60 ಕ್ಕಿಂತ ಕಡಿಮೆಯಿದ್ದರೆ ಜನದಟ್ಟಣೆ ಅಥವಾ ನಿಲ್ದಾಣ ಸ್ಥಗಿತವಿದೆ ಎಂದರ್ಥ."),
+            ("Crowded Routes (ಜನದಟ್ಟಣೆಯ ಮಾರ್ಗಗಳು)", "ಪ್ರಯಾಣಿಕರ ಸಂಖ್ಯೆ ಸೀಟುಗಳ ಸಾಮರ್ಥ್ಯಕ್ಕಿಂತ ಹೆಚ್ಚಾಗಿರುವ ಬಸ್ ಅಥವಾ ಮೆಟ್ರೋ ಮಾರ್ಗಗಳ ಸಂಖ್ಯೆ."),
+            ("Bus Frequency & Extra Buses (ಬಸ್ ಆವರ್ತನ)", "ಬಸ್‌ಗಳು ಎಷ್ಟು ನಿಮಿಷಕ್ಕೊಮ್ಮೆ ಬರುತ್ತವೆ ಎಂಬುದನ್ನು ತೋರಿಸುತ್ತದೆ. ನಿಲ್ದಾಣ ಸ್ಥಗಿತಗೊಂಡಾಗ ಬಸ್‌ಗಳ ಸಂಖ್ಯೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಹೆಚ್ಚಾಗುತ್ತದೆ."),
+            ("Train Gap / Wait Time (ರೈಲುಗಳ ನಡುವಿನ ಅಂತರ)", "ಎರಡು ಮೆಟ್ರೋ ರೈಲುಗಳ ನಡುವಿನ ನಿಮಿಷಗಳ ಅಂತರ. ಇದನ್ನು ಕಡಿಮೆ ಮಾಡಿದರೆ ಹೆಚ್ಚು ರೈಲುಗಳು ಸಂಚರಿಸುತ್ತವೆ."),
+            ("Spare Buses Available in Depots (ಹೆಚ್ಚುವರಿ ಬಸ್‌ಗಳು)", "ತುರ್ತು ಸಂದರ್ಭಗಳಲ್ಲಿ ಬಳಸಲು ಡಿಪೋಗಳಲ್ಲಿ ಲಭ್ಯವಿರುವ ಹೆಚ್ಚುವರಿ ಬಿಎಂಟಿಸಿ ಬಸ್‌ಗಳ ಸಂಖ್ಯೆ."),
+            ("Officer Action Log (ಅಧಿಕಾರಿಗಳ ಕ್ರಮಗಳ ದಾಖಲೆ)", "ಅಧಿಕಾರಿಗಳು ಮಾಡಿದ ಪ್ರತಿಯೊಂದು ಬದಲಾವಣೆಯ ಸಮಯ ಮತ್ತು ವಿವರಗಳ ದಾಖಲೆ.")
         ]
     },
     "हिन्दी (Hindi)": {
-        "title": "📘 प्राधिकरण नियंत्रण कक्ष संचालन मैनुअल (SOP)",
+        "title": "📘 प्राधिकरण नियंत्रण कक्ष मैनुअल और शब्दावली (Manual & Glossary)",
         "steps": [
             ("1. यात्री रिपोर्टों की पुष्टि करें", "यात्रियों द्वारा भेजी गई खराबी की सूचनाएं टैब 1 में दिखाई देती हैं। जब तक आप **✅ Confirm & Push** पर क्लिक नहीं करते, तब तक मार्ग नहीं बदलते।"),
             ("2. सीधा प्रोएक्टिव अलर्ट और पुश नोटिफिकेशन", "कंट्रोल रूम से सीधे किसी भी स्टेशन के बंद होने की सूचना प्रकाशित करें। बिना लॉगिन के यात्रियों के डिवाइस पर तुरंत पुश अलर्ट पहुंच जाएगा।"),
             ("3. स्टेशन को पुनः चालू करें", "समस्या ठीक होने पर सक्रिय अलर्ट के पास **✅ Reopen** पर क्लिक करके सामान्य सेवा बहाल करें।"),
-            ("4. मेट्रो हेडवे और बस फ्लीट ऑप्टिमाइज़ेशन", "टैब 2 में **Metro Headway** कम करें या **Bus Priority Lanes** चालू करें, डिपो से शटल बसें भेजें और शिफ्ट रिपोर्ट (CSV) डाउनलोड करें।")
+            ("4. ट्रेन अंतराल और बस फ्लीट ऑप्टिमाइज़ेशन", "टैब 2 में **Train Gap / Wait Time** कम करें या **Dedicated Bus-Only Lanes** चालू करें, डिपो से शटल बसें भेजें और शिफ्ट रिपोर्ट (CSV) डाउनलोड करें।")
+        ],
+        "glossary": [
+            ("System Health Score (सिस्टम स्वास्थ्य स्कोर)", "0–100 का स्कोर जो दिखाता है कि परिवहन कितना सुचारू है। 80+ का अर्थ सामान्य है; 60 से कम का अर्थ भीड़ या स्टेशन बंद होना है।"),
+            ("Crowded Routes (भीड़भाड़ वाले मार्ग)", "उन बस या मेट्रो मार्गों की संख्या जहाँ यात्रियों की संख्या उपलब्ध क्षमता से अधिक है।"),
+            ("Bus Frequency & Extra Buses (बस आवृत्ति)", "दिखाता है कि बसें कितने मिनट में आ रही हैं। स्टेशन बंद होने पर बीएमटीसी अपने आप बसों की आवृत्ति बढ़ा देता है।"),
+            ("Train Gap / Wait Time (ट्रेन अंतराल)", "दो मेट्रो ट्रेनों के बीच का समय (मिनटों में)। इसे कम करने से ट्रैक पर अधिक ट्रेनें चलती हैं।"),
+            ("Spare Buses Available in Depots (अतिरिक्त बसें)", "आपातकालीन स्थिति में भेजने के लिए डिपो में उपलब्ध रिजर्व बसों की कुल संख्या।"),
+            ("Officer Action Log (अधिकारी कार्य लॉग)", "अधिकारी द्वारा किए गए हर बदलाव, स्टेशन बंद करने और बस भेजने का समय-बद्ध रिकॉर्ड।")
         ]
     }
 }
@@ -1133,8 +1157,15 @@ else:
     with a_tab2:
         man = AUTHORITY_MANUAL[selected_lang]
         with st.expander(man["title"], expanded=True):
-            for step_t, step_b in man["steps"]:
-                st.markdown(f"**{step_t}:** {step_b}")
+            m_col1, m_col2 = st.columns([1.05, 1], gap="large")
+            with m_col1:
+                st.markdown("#### 📋 Step-by-Step Operating Guide")
+                for step_t, step_b in man["steps"]:
+                    st.markdown(f"**{step_t}:** {step_b}")
+            with m_col2:
+                st.markdown("#### 📖 Dashboard Terms Explained")
+                for term_t, term_b in man["glossary"]:
+                    st.markdown(f"• **{term_t}:** {term_b}")
 
         st.divider()
         p_col1, p_col2, p_col3 = st.columns(3, gap="medium")
