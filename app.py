@@ -461,7 +461,7 @@ def build_step_by_step_route(graph, path, start_feeder=None, end_feeder=None, st
         first_mode = classify_edge_line(path[0], path[1], graph[path[0]][path[1]]["mode"])
         if "Metro" in first_mode:
             b_clean = st_name(path[0]).split("[")[0].strip()
-            raw_legs.append({"custom_text": f"<b>Wait & Security</b> at <b>{b_clean} Station</b>", "stops": [b_clean], "mins": 4.0, "f_min": 0, "f_max": 0, "is_feeder": True, "is_buffer": True})
+            raw_legs.append({"custom_text": f"Allow <b>4 min</b> for security screening and platform wait at <b>{b_clean} Station</b>", "stops": [b_clean], "mins": 4.0, "f_min": 0, "f_max": 0, "is_feeder": True, "is_buffer": True, "hide_mins": True})
             total_time += 4.0; built_in_buffer += 4.0
 
         curr_mode = first_mode
@@ -480,13 +480,13 @@ def build_step_by_step_route(graph, path, start_feeder=None, end_feeder=None, st
                 raw_legs.append({"mode": curr_mode, "stops_ids": curr_stops, "mins": round(curr_mins, 1)})
                 hub_clean = st_name(u).split("[")[0].strip()
                 xfer_mins = 8.0 if u == "MAJ" else (6.0 if u == "RVR" else 5.0)
-                raw_legs.append({"custom_text": f"<b>Interchange Walk & Platform Wait</b> at <b>{hub_clean}</b> ({curr_mode.split(' ')[0]} ➔ {m.split(' ')[0]})", "stops": [hub_clean], "mins": xfer_mins, "f_min": 0, "f_max": 0, "is_feeder": True, "is_buffer": True})
+                raw_legs.append({"custom_text": f"<b>Transfer at {hub_clean}:</b> Walk to the <b>{m.split(' ')[0]} Line</b> platform and wait (<b>~{int(xfer_mins)} min</b>)", "stops": [hub_clean], "mins": xfer_mins, "f_min": 0, "f_max": 0, "is_feeder": True, "is_buffer": True, "hide_mins": True})
                 total_time += xfer_mins; built_in_buffer += xfer_mins
                 curr_mode, curr_stops, curr_mins = m, [u, v], t
         raw_legs.append({"mode": curr_mode, "stops_ids": curr_stops, "mins": round(curr_mins, 1)})
 
     if is_peak_rush_hour(st.session_state.dep_time) and any("Metro" in lg.get("mode", "") for lg in raw_legs):
-        raw_legs.append({"custom_text": "<b>Peak Rush Boarding Buffer</b> (8:30–10:30 AM / 5:30–8:30 PM platform congestion)", "stops": ["Rush Buffer"], "mins": 4.0, "f_min": 0, "f_max": 0, "is_feeder": True, "is_buffer": True})
+        raw_legs.append({"custom_text": "Allow an extra <b>4 min</b> for peak rush-hour boarding congestion (8:30–10:30 AM / 5:30–8:30 PM)", "stops": ["Rush Buffer"], "mins": 4.0, "f_min": 0, "f_max": 0, "is_feeder": True, "is_buffer": True, "hide_mins": True})
         total_time += 4.0; built_in_buffer += 4.0
 
     total_metro_hops = sum(len(lg["stops_ids"]) - 1 for lg in raw_legs if "stops_ids" in lg and "Metro" in lg["mode"])
@@ -962,13 +962,45 @@ if not is_admin_portal:
                     step_htmls = []
                     for i, lg in enumerate(legs, 1):
                         if "custom_text" in lg:
-                            step_htmls.append(f"<div class='leg-step'><b>{i}.</b> {lg['custom_text']} <span style='color:#e3b341;'>({lg['mins']} min)</span></div>")
+                            tail = "" if lg.get("hide_mins") else f" <span style='color:#e3b341;'>({int(round(lg['mins']))} min)</span>"
+                            step_htmls.append(f"<div class='leg-step'><b>{i}.</b> {lg['custom_text']}{tail}</div>")
                         else:
-                            f_txt = f"₹{lg['f_min']}" if lg['f_min'] == lg['f_max'] else f"₹{lg['f_min']}–₹{lg['f_max']}"
-                            f_note = lg.get("fare_note", "")
-                            via_txt = f" <span style='color:#8b949e;'>(via {' → '.join(lg['stops'][1:-1])})</span>" if len(lg["stops"]) > 2 else ""
+                            m_raw = lg["mode"]
+                            m_low = m_raw.lower()
+                            mins_clean = int(round(lg["mins"]))
+                            if lg["f_min"] == 0 and lg["f_max"] == 0:
+                                f_txt = "Included in Token" if "Included" in lg.get("fare_note", "") else "Free"
+                            elif lg["f_min"] == lg["f_max"]:
+                                f_val = int(lg["f_min"]) if float(lg["f_min"]).is_integer() else lg["f_min"]
+                                f_txt = f"₹{f_val}"
+                            else:
+                                f_txt = f"₹{int(lg['f_min'])}–₹{int(lg['f_max'])}"
+                            f_note = "" if f_txt == "Included in Token" else lg.get("fare_note", "")
+
+                            # Natural English verb & preposition based on transport mode
+                            if "walk (direct footbridge)" in m_low:
+                                action_phrase = f"Walk via the direct footbridge from <b>{lg['from']}</b> to <b>{lg['to']}</b>"
+                            elif m_low.startswith("walk"):
+                                action_phrase = f"Walk from <b>{lg['from']}</b> to <b>{lg['to']}</b>"
+                            elif "metro" in m_low:
+                                action_phrase = f"Board the <b>{m_raw}</b> from <b>{lg['from']}</b> to <b>{lg['to']}</b>"
+                            elif "shuttle" in m_low:
+                                action_phrase = f"Take the <b>{m_raw}</b> from <b>{lg['from']}</b> to <b>{lg['to']}</b>"
+                            elif "bus" in m_low:
+                                action_phrase = f"Board a <b>{m_raw}</b> from <b>{lg['from']}</b> to <b>{lg['to']}</b>"
+                            else:
+                                action_phrase = f"Travel via <b>{m_raw}</b> from <b>{lg['from']}</b> to <b>{lg['to']}</b>"
+
+                            mid_stops = lg["stops"][1:-1]
+                            if len(mid_stops) > 4:
+                                via_txt = f"<details style='margin:2px 0 4px 16px; color:#8b949e; font-size:0.83rem;'><summary style='cursor:pointer;'>View {len(mid_stops)} intermediate stops</summary><div style='padding-top:3px;'>{' → '.join(mid_stops)}</div></details>"
+                            elif mid_stops:
+                                via_txt = f" <span style='color:#8b949e;'>(via {' → '.join(mid_stops)})</span>"
+                            else:
+                                via_txt = ""
+
                             fq_html = f" <span style='background:rgba(46,160,67,0.2); color:#7ee787; border:1px solid rgba(46,160,67,0.4); padding:1px 7px; border-radius:999px; font-size:0.78rem; font-weight:600;'>{lg['freq_badge']}</span>" if lg.get("freq_badge") else ""
-                            step_htmls.append(f"<div class='leg-step'><b>{i}.</b> Take <b>{lg['mode']}</b> from <b>{lg['from']}</b> ➔ <b>{lg['to']}</b>{via_txt} <span style='color:#79c0ff;'>({lg['mins']} min • {f_txt}{f_note})</span>{fq_html}</div>")
+                            step_htmls.append(f"<div class='leg-step'><b>{i}.</b> {action_phrase} <span style='color:#79c0ff;'>(~{mins_clean} min • {f_txt}{f_note})</span>{fq_html}{via_txt}</div>")
                     legs_block = "".join(step_htmls)
                     st.markdown(f"""
                     <div class="route-card">
