@@ -109,7 +109,8 @@ def allocate_bus_bridges(G_base, G_sim, depots_df, unserved_list, closed_station
 
         for target_stop, need_pax in demand_nodes.items():
             try:
-                dist_cost = int(nx.shortest_path_length(G_base, dep_node, target_stop, weight="base_time"))
+                raw_dist = nx.shortest_path_length(G_base, dep_node, target_stop, weight="base_time")
+                dist_cost = int(raw_dist) if pd.notna(raw_dist) else 999
             except nx.NetworkXNoPath:
                 dist_cost = 30
             F.add_edge(dep_id, f"DEM_{target_stop}", capacity=int(need_pax), weight=dist_cost)
