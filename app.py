@@ -327,6 +327,13 @@ edges.loc[edges["mode"].str.contains("Bus", na=False), "capacity"] *= st.session
 
 depots = pd.read_csv("depots.csv")
 G_base = build_graph(nodes, edges)
+for _u, _v, _d in G_base.edges(data=True):
+    _bt = float(_d.get("base_time", _d.get("time", 2.0)))
+    if not (_bt > 0):
+        _bt = 2.0
+    _d["base_time"] = _bt
+    _t = float(_d.get("time", _bt))
+    _d["time"] = _t if _t > 0 else _bt
 
 def sanitize_bpr_times(graph, bus_priority=False):
     for u, v, d in graph.edges(data=True):
@@ -397,6 +404,24 @@ def build_resilient_routing_graph(sim_graph):
                     G_detour.add_edge(n2, n1, mode="BMTC Emergency Shuttle", base_time=bt, time=bt, load=320.0, capacity=600.0)
     return G_detour
 
+GREEN_LINE_SET = {"MDV", "NGS", "DSR", "JLH", "PND", "PNY", "GGP", "YPR", "SDL", "MHL", "RJN", "MHK", "SRM", "MNT", "CKP", "KRM", "NCL", "LBG", "SEC", "JYN", "BSK", "JPN", "YLH", "KKC", "SLK"}
+PURPLE_LINE_SET = {"CHG", "KBT", "KNG", "PTG", "JNB", "RRN", "NYD", "MYR", "DJN", "ATG", "VJN", "HSG", "MGD", "KSR", "SRC", "VDS", "CUB", "MGR", "TRT", "HLS", "IND", "SVR", "BYP", "BNG", "KRP", "SGP", "GDC", "HDI", "STH", "KDL", "NLL", "SRS", "PTN", "KDG", "HPD", "WFD"}
+YELLOW_LINE_SET = {"BTM", "SLB", "HSR", "ELC", "BMS"}
+
+def classify_edge_line(u, v, raw_mode):
+    if raw_mode != "Metro":
+        return raw_mode
+    pair = {u, v}
+    if pair & GREEN_LINE_SET:
+        return "Green Line Metro"
+    if pair & YELLOW_LINE_SET:
+        return "Yellow Line Metro"
+    return "Purple Line Metro"
+
+def is_peak_rush_hour(t_obj):
+    mins = t_obj.hour * 60 + t_obj.minute
+    return (510 <= mins <= 630) or (1050 <= mins <= 1230)  # 8:30-10:30 AM & 5:30-8:30 PM
+
 def build_step_by_step_route(graph, path, start_feeder=None, end_feeder=None, start_label="", end_label="", use_pass=False):
     raw_legs, total_time, fare_min, fare_max = [], 0.0, 0, 0
     if start_feeder:
@@ -405,53 +430,84 @@ def build_step_by_step_route(graph, path, start_feeder=None, end_feeder=None, st
         total_time += start_feeder["mins"]; fare_min += start_feeder["fare_min"]; fare_max += start_feeder["fare_max"]
 
     if len(path) >= 2:
-        curr_mode, curr_stops, curr_mins = graph[path[0]][path[1]]["mode"], [path[0], path[1]], graph[path[0]][path[1]]["time"]
+        first_mode = classify_edge_line(path[0], path[1], graph[path[0]][path[1]]["mode"])
+        # Inject initial station security, ticketing & platform wait for Metro starts
+        if "Metro" in first_mode:
+            b_clean = st_name(path[0]).split("[")[0].strip()
+            raw_legs.append({"mode": "Wait & Security", "from": f"{b_clean} Station", "to": f"{b_clean} Platform", "stops": [b_clean], "mins": 4.0, "f_min": 0, "f_max": 0, "is_feeder": True})
+            total_time += 4.0
+
+        curr_mode = first_mode
+        curr_stops = [path[0], path[1]]
+        curr_mins = 2.2 if "Metro" in first_mode else graph[path[0]][path[1]]["time"]
+
         for i in range(1, len(path) - 1):
             u, v = path[i], path[i + 1]
-            m, t = graph[u][v]["mode"], graph[u][v]["time"]
-            if m == curr_mode: curr_stops.append(v); curr_mins += t
+            m = classify_edge_line(u, v, graph[u][v]["mode"])
+            t = 2.2 if "Metro" in m else graph[u][v]["time"]
+            if m == curr_mode:
+                curr_stops.append(v)
+                curr_mins += t
             else:
                 raw_legs.append({"mode": curr_mode, "stops_ids": curr_stops, "mins": round(curr_mins, 1)})
+                # Hard interchange walk & platform transfer buffer at Majestic / RV Road / mode switches
+                hub_clean = st_name(u).split("[")[0].strip()
+                xfer_mins = 8.0 if u == "MAJ" else (6.0 if u == "RVR" else 5.0)
+                raw_legs.append({"mode": "Interchange Walk & Wait", "from": f"{hub_clean} ({curr_mode.split(' ')[0]})", "to": f"{hub_clean} ({m.split(' ')[0]})", "stops": [hub_clean], "mins": xfer_mins, "f_min": 0, "f_max": 0, "is_feeder": True})
+                total_time += xfer_mins
                 curr_mode, curr_stops, curr_mins = m, [u, v], t
         raw_legs.append({"mode": curr_mode, "stops_ids": curr_stops, "mins": round(curr_mins, 1)})
 
-    total_metro_hops = sum(len(lg["stops_ids"]) - 1 for lg in raw_legs if "stops_ids" in lg and lg["mode"] == "Metro")
-    unified_metro_fare = min(90, max(10, 10 + total_metro_hops * 5)) if total_metro_hops > 0 else 0
-    if use_pass and unified_metro_fare > 0: unified_metro_fare = max(10, int(round(unified_metro_fare * 0.90)))
+    # Peak rush-hour crowd boarding buffer (+4 min during 8:30-10:30 AM & 5:30-8:30 PM)
+    if is_peak_rush_hour(st.session_state.dep_time) and any("Metro" in lg.get("mode", "") for lg in raw_legs):
+        raw_legs.append({"mode": "Peak Rush Boarding Buffer", "from": "Platform Congestion (8:30–10:30 AM / 5:30–8:30 PM)", "to": "Boarded Train", "stops": ["Rush Buffer"], "mins": 4.0, "f_min": 0, "f_max": 0, "is_feeder": True})
+        total_time += 4.0
 
-    metro_fare_assigned = 0
-    metro_legs_indices = [idx for idx, lg in enumerate(raw_legs) if "stops_ids" in lg and lg["mode"] == "Metro"]
+    total_metro_hops = sum(len(lg["stops_ids"]) - 1 for lg in raw_legs if "stops_ids" in lg and "Metro" in lg["mode"])
+    unified_metro_fare = min(90, max(10, 10 + total_metro_hops * 3)) if total_metro_hops > 0 else 0
+    # Namma Metro 5% Smart Card discount
+    if use_pass and unified_metro_fare > 0:
+        unified_metro_fare = round(unified_metro_fare * 0.95, 2)
+
+    metro_fare_assigned = 0.0
+    metro_legs_indices = [idx for idx, lg in enumerate(raw_legs) if "stops_ids" in lg and "Metro" in lg["mode"]]
     formatted_legs = []
     for idx, lg in enumerate(raw_legs):
-        if lg.get("is_feeder"): formatted_legs.append(lg); continue
+        if lg.get("is_feeder"):
+            formatted_legs.append(lg)
+            continue
         hops, m = len(lg["stops_ids"]) - 1, lg["mode"]
-        if m == "Metro":
-            if idx == metro_legs_indices[-1]: l_min = max(0, unified_metro_fare - metro_fare_assigned)
+        if "Metro" in m:
+            if idx == metro_legs_indices[-1]:
+                l_min = round(max(0.0, unified_metro_fare - metro_fare_assigned), 2)
             else:
-                l_min = int(round(unified_metro_fare * (hops / max(1, total_metro_hops))))
+                l_min = round(unified_metro_fare * (hops / max(1, total_metro_hops)), 2)
                 metro_fare_assigned += l_min
             l_max = l_min
         elif "Bus" in m or "Shuttle" in m:
-            if "KIA" in lg["stops_ids"]: l_min, l_max = (210, 260) if use_pass else (240, 290)
+            if "KIA" in lg["stops_ids"]:
+                l_min, l_max = (225, 275) if use_pass else (240, 290)
             else:
                 base_bmtc = min(45, max(10, 8 + hops * 4))
                 ac_bmtc = min(65, base_bmtc + 15)
-                l_min = int(base_bmtc * 0.85) if use_pass else base_bmtc
-                l_max = int(ac_bmtc * 0.90) if use_pass else ac_bmtc
+                l_min = int(round(base_bmtc * 0.95)) if use_pass else base_bmtc
+                l_max = int(round(ac_bmtc * 0.95)) if use_pass else ac_bmtc
         else:
             base_reg = min(130, max(30, 25 + hops * 18))
             max_reg = min(190, base_reg + 35)
-            l_min = int(base_reg * 0.90) if use_pass else base_reg
-            l_max = int(max_reg * 0.90) if use_pass else max_reg
+            l_min = int(round(base_reg * 0.95)) if use_pass else base_reg
+            l_max = int(round(max_reg * 0.95)) if use_pass else max_reg
 
-        fare_min += l_min; fare_max += l_max; total_time += lg["mins"]
+        fare_min = round(fare_min + l_min, 2)
+        fare_max = round(fare_max + l_max, 2)
+        total_time += lg["mins"]
         stop_names = [st_name(s).split("[")[0].strip() for s in lg["stops_ids"]]
-        formatted_legs.append({"mode": m, "from": stop_names[0], "to": stop_names[-1], "stops": stop_names, "mins": lg["mins"], "f_min": l_min, "f_max": l_max})
+        formatted_legs.append({"mode": f"{m} ({hops} stops)" if "Metro" in m else m, "from": stop_names[0], "to": stop_names[-1], "stops": stop_names, "mins": round(lg["mins"], 1), "f_min": l_min, "f_max": l_max})
 
     if end_feeder:
         hub_clean = st_name(end_feeder["hub"]).split("[")[0].strip()
         formatted_legs.append({"mode": end_feeder["feeder_mode"], "from": hub_clean, "to": end_label, "stops": [hub_clean, end_label], "mins": end_feeder["mins"], "f_min": end_feeder["fare_min"], "f_max": end_feeder["fare_max"]})
-        total_time += end_feeder["mins"]; fare_min += end_feeder["fare_min"]; fare_max += end_feeder["fare_max"]
+        total_time += end_feeder["mins"]; fare_min = round(fare_min + end_feeder["fare_min"], 2); fare_max = round(fare_max + end_feeder["fare_max"], 2)
     return formatted_legs, round(total_time, 1), fare_min, fare_max
 
 def get_alternative_paths(graph, source, target, k=3, priority="⚡ Fastest"):
@@ -542,7 +598,9 @@ def render_focused_map(height=490, active_route=None, orig_label="", dest_label=
             mode = r_graph[u][v]["mode"] if r_graph.has_edge(u, v) else "Bus"
             t_min = r_graph[u][v]["time"] if r_graph.has_edge(u, v) else 5
 
-            if mode == "Metro": seg_color, label_name = "#a371f7", "🟣 Namma Metro"
+            if "Green Line" in mode: seg_color, label_name = "#2ea043", "🟢 Green Line Metro"
+            elif "Yellow Line" in mode: seg_color, label_name = "#e3b341", "🟡 Yellow Line Metro"
+            elif "Metro" in mode: seg_color, label_name = "#a371f7", "🟣 Purple Line Metro"
             elif "Shuttle" in mode: seg_color, label_name = "#d29922", "🟡 Emergency Shuttle"
             elif "Regional" in mode: seg_color, label_name = "#58a6ff", "🔵 Regional KSRTC/Rail"
             else: seg_color, label_name = "#3fb950", "🟢 BMTC Bus"
