@@ -1,0 +1,15 @@
+depot_id,name,nearest_node,available_buses,bus_capacity
+DEP_KBS,Kempegowda (KBS) Central Depot,MAJ,14,60
+DEP_SHV,Shivajinagar TTMC Depot,SHV,10,60
+DEP_YPR,Yeshwanthpur TTMC Depot,YPR,12,60
+DEP_BSK,Banashankari TTMC Depot,BSK,10,60
+DEP_KNG,Kengeri TTMC Depot,KNG,10,60
+DEP_WFD,Whitefield TTMC Depot,WFD,10,60
+DEP_KRP,KR Puram Depot,KRP,10,60
+DEP_HBL,Hebbal Depot,HBL,10,60
+DEP_ELC,Electronic City Depot,ELC,10,60
+DEP_TMK,Tumakuru KSRTC Division,TMK,10,60
+DEP_KLR,Kolar KSRTC Division,KLR,10,60
+DEP_CBP,Chikkaballapur KSRTC Depot,CBP,8,60
+DEP_RMN,Ramanagara KSRTC Depot,RMN,10,60
+DEP_NLM,Nelamangala Depot,NLM,8,60
