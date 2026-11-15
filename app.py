@@ -323,7 +323,11 @@ closed_stations = st.session_state.closed_stations
 
 nodes, edges, od = load_data(demand_scale=demand_scale, capacity_scale=capacity_scale)
 edges.loc[edges["mode"] == "Metro", "capacity"] *= (5.0 / st.session_state.metro_headway_min)
-edges.loc[edges["mode"].str.contains("Bus", na=False), "capacity"] *= st.session_state.bus_freq_mult
+auto_surge_mult = round(1.0 + min(2.5, len(closed_stations) * 0.85), 1) if closed_stations else 1.0
+effective_bus_mult = round(max(st.session_state.bus_freq_mult, auto_surge_mult), 1)
+base_bus_headway = 12.0
+live_bus_headway = max(3, int(round(base_bus_headway / effective_bus_mult)))
+edges.loc[edges["mode"].str.contains("Bus", na=False), "capacity"] *= effective_bus_mult
 
 depots = pd.read_csv("depots.csv")
 G_base = build_graph(nodes, edges)
@@ -501,7 +505,13 @@ def build_step_by_step_route(graph, path, start_feeder=None, end_feeder=None, st
         fare_max = round(fare_max + l_max, 2)
         total_time += lg["mins"]
         stop_names = [st_name(s).split("[")[0].strip() for s in lg["stops_ids"]]
-        formatted_legs.append({"mode": f"{m} ({hops} stops)" if "Metro" in m else m, "from": stop_names[0], "to": stop_names[-1], "stops": stop_names, "mins": round(lg["mins"], 1), "f_min": l_min, "f_max": l_max, "fare_note": fare_note})
+        if "Shuttle" in m:
+            freq_badge = f"⚡ {effective_bus_mult}x Surge • Every {live_bus_headway} min"
+        elif "Bus" in m:
+            freq_badge = f"⚡ {effective_bus_mult}x Freq • Every {live_bus_headway} min" if effective_bus_mult > 1.0 else f"Every {live_bus_headway} min"
+        else:
+            freq_badge = ""
+        formatted_legs.append({"mode": f"{m} ({hops} stops)" if "Metro" in m else m, "from": stop_names[0], "to": stop_names[-1], "stops": stop_names, "mins": round(lg["mins"], 1), "f_min": l_min, "f_max": l_max, "fare_note": fare_note, "freq_badge": freq_badge})
 
     if end_feeder:
         hub_clean = st_name(end_feeder["hub"]).split("[")[0].strip()
@@ -844,7 +854,8 @@ if not is_admin_portal:
     b_col1, b_col2 = st.columns([2.35, 1.05], gap="medium")
     with b_col1:
         if closed_stations:
-            st.markdown(f"<div class='alert-banner'>{T['alert_active'].format(hubs=', '.join(st_name(s).split('[')[0].strip() for s in closed_stations))}</div>", unsafe_allow_html=True)
+            surge_pill = f" &nbsp;<span style='background:rgba(46,160,67,0.28); color:#7ee787; border:1px solid rgba(46,160,67,0.55); padding:2px 9px; border-radius:999px; font-size:0.82rem; font-weight:700;'>🚌 BMTC Surge Active: {effective_bus_mult}x Frequency (Every {live_bus_headway} min)</span>"
+            st.markdown(f"<div class='alert-banner'>{T['alert_active'].format(hubs=', '.join(st_name(s).split('[')[0].strip() for s in closed_stations))}{surge_pill}</div>", unsafe_allow_html=True)
         else:
             st.markdown(f"<div class='ok-banner'>{T['alert_ok']}</div>", unsafe_allow_html=True)
         for notice in reversed(st.session_state.official_notices[-2:]):
@@ -932,7 +943,8 @@ if not is_admin_portal:
                             f_txt = f"₹{lg['f_min']}" if lg['f_min'] == lg['f_max'] else f"₹{lg['f_min']}–₹{lg['f_max']}"
                             f_note = lg.get("fare_note", "")
                             via_txt = f" <span style='color:#8b949e;'>(via {' → '.join(lg['stops'][1:-1])})</span>" if len(lg["stops"]) > 2 else ""
-                            step_htmls.append(f"<div class='leg-step'><b>{i}.</b> Take <b>{lg['mode']}</b> from <b>{lg['from']}</b> ➔ <b>{lg['to']}</b>{via_txt} <span style='color:#79c0ff;'>({lg['mins']} min • {f_txt}{f_note})</span></div>")
+                            fq_html = f" <span style='background:rgba(46,160,67,0.2); color:#7ee787; border:1px solid rgba(46,160,67,0.4); padding:1px 7px; border-radius:999px; font-size:0.78rem; font-weight:600;'>{lg['freq_badge']}</span>" if lg.get("freq_badge") else ""
+                            step_htmls.append(f"<div class='leg-step'><b>{i}.</b> Take <b>{lg['mode']}</b> from <b>{lg['from']}</b> ➔ <b>{lg['to']}</b>{via_txt} <span style='color:#79c0ff;'>({lg['mins']} min • {f_txt}{f_note})</span>{fq_html}</div>")
                     legs_block = "".join(step_htmls)
                     st.markdown(f"""
                     <div class="route-card">
@@ -1050,7 +1062,7 @@ else:
     k1, k2, k3 = st.columns(3)
     k1.metric("Network Resilience", f"{resilience_score}/100", delta="Optimal" if resilience_score >= 80 else "Stressed", delta_color="normal" if resilience_score >= 80 else "inverse")
     k2.metric("Overloaded Links", f"{len(overloaded_edges)} corridors", delta=f"{len(st.session_state.pending_reports)} pending citizen alerts", delta_color="inverse" if overloaded_edges else "off")
-    k3.metric("Reserve Fleet & CO₂ Impact", f"{total_buses_dispatched} / {st.session_state.reserve_bus_budget} buses", delta=f"🌱 {co2_saved_tons}t CO₂ saved")
+    k3.metric("Bus Freq & Fleet Surge", f"{effective_bus_mult}x ({live_bus_headway}m headway)", delta=f"🚌 {total_buses_dispatched} surge buses • 🌱 {co2_saved_tons}t CO₂ saved")
 
     tab1_label = f"🗺️ Live Command & Alerts ({len(st.session_state.pending_reports)})" if st.session_state.pending_reports else "🗺️ Live Command & Alerts"
     a_tab1, a_tab2 = st.tabs([tab1_label, "🚌 Fleet, Manual & Audit"])
